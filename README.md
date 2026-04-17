@@ -1,73 +1,35 @@
-# React + TypeScript + Vite
+# 📜 Paperize
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**Paperize** is a premium, visual dialogue editor designed for creators who love the power of **Ink** but want the clarity of a boutique, node-based workspace. 
 
-Currently, two official plugins are available:
+Born from the development of *Elara's Mystical Mountain Chalet*, Paperize turns complex branching logic into a beautiful, tactile experience.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+---
 
-## React Compiler
+## ✨ Features that Spark Joy
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **Visual Storytelling**: Map out your narrative with elegant **Knot** and **Choice** nodes. See your story breathe without getting lost in script files.
+- **Bespoke Design**: Choose a workspace that fits your mood. From the warm **Classic Vintage** book aesthetic to the modern, translucent **Liquid Glass** theme.
+- **Smart Authoring**:
+  - **Intellisense**: Type `~` to instantly autocomplete your global Unity external functions.
+  - **Auto-Formatting**: Let Paperize handle the `# speaker:` tags and indents. Focus on the words; we'll handle the syntax.
+  - **Sticky & Fallback Logic**: Full support for Ink's advanced choice matrices (`+`, `*`, `->`) directly in the UI.
+- **Built for Unity**: One-click `.ink` export that is perfectly formatted and ready to drop into your Unity game engine.
+- **The Compiler Shield**: Playtest your story natively in the browser. Our logic securely binds dummy functions so you can test your branches without crashing.
 
-## Expanding the ESLint configuration
+---
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## 🚀 Quick Start
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+1. **Host it anywhere**: Paperize is a static React app. You can run it locally with `npm run dev` or drop the `dist` folder onto Vercel/Netlify.
+2. **Design your flow**: Drag and drop nodes to build your conversation.
+3. **Save your workspace**: Use the `.prz` file format to save your node graph and settings.
+4. **Export & Play**: Hit "Export .ink" and watch your visual masterpiece turn into clean, industrial-grade Ink script.
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+---
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## 🎨 Creative Philosophy
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Paperize wasn't built to replace manual scripting—it was built to celebrate it. We believe that the tools used to create art should be as inspiring as the art itself. Whether you're writing a quick quip or a 5-round minigame, Paperize keeps your head in the story and your heart in the craft.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+*Built with love for the Tensoreal team and Elara's journey.* 🌲🏔️🫧
