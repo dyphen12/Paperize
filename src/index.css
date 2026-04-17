@@ -1,0 +1,361 @@
+:root {
+  /* Vintage Dark Book Aesthetics */
+  --bg-color: #1a1715;          /* Deep warm charcoal/brown background */
+  --bg-texture: #231f1c;        /* Slightly lighter for cards/nodes */
+  --text-primary: #e8dbce;      /* Creamy parchment text color */
+  --text-secondary: #a39688;    /* Muted text for UI elements */
+  
+  --accent-color: #c9884e;      /* Subtle muted gold/bronze for interactive elements */
+  --accent-hover: #e0a36e;
+  
+  --border-color: #3b332d;      /* Subtle dark border that feels like a spine or dividing line */
+
+  --font-serif: 'Cormorant Garamond', serif;
+  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 12px 24px rgba(0, 0, 0, 0.6);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  background-color: var(--bg-color);
+  color: var(--text-primary);
+  overflow: hidden;
+  /* Add subtle texture feel with a linear gradient or very slight noise if wanted, but color is good for now */
+}
+
+/* Typography for the "Book" parts */
+.book-text {
+  font-family: var(--font-serif);
+  font-size: 1.25rem;
+  line-height: 1.6;
+  color: var(--text-primary);
+}
+
+/* The application layout */
+.app-container {
+  display: flex;
+  width: 100vw;
+  height: 100vh;
+}
+
+/* Main Graph Canvas Area */
+.graph-area {
+  flex-grow: 1;
+  position: relative;
+  background-color: transparent;
+}
+
+/* React Flow custom styling overrides to fit the aesthetic */
+.react-flow__bg {
+  /* We can override the dot pattern to be warm dark */
+}
+
+/* Side Inspector / The Book Reader */
+.inspector-panel {
+  width: 450px;
+  background-color: var(--bg-texture);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border-left: 1px solid var(--border-color);
+  box-shadow: -4px 0 16px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+  z-index: 10;
+}
+
+.inspector-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.inspector-header h2 {
+  font-family: var(--font-serif);
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: var(--accent-color);
+}
+
+.inspector-body {
+  flex: 1;
+  padding: 1.5rem;
+  overflow-y: auto;
+}
+
+/* Text editor that doesn't look like a code editor */
+.book-editor {
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-family: var(--font-serif);
+  font-size: 1.35rem;
+  line-height: 1.6;
+  resize: none;
+  outline: none;
+}
+
+.book-editor::placeholder {
+  color: var(--text-secondary);
+}
+
+/* Custom Node Styles */
+.custom-node {
+  background-color: var(--node-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 15px;
+  min-width: 180px;
+  box-shadow: var(--shadow-sm);
+  color: var(--text-primary);
+  font-family: var(--font-serif);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.custom-node.selected {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 1px var(--accent-color), var(--shadow-md);
+}
+
+.custom-node-header {
+  font-family: var(--font-sans);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 8px;
+  padding-bottom: 4px;
+}
+
+.custom-node-content {
+  font-size: 1rem;
+  line-height: 1.5;
+  flex: 1;
+  overflow: hidden;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.node-handle {
+  width: 10px;
+  height: 10px;
+  background-color: var(--accent-color);
+  border: 2px solid var(--bg-texture);
+}
+
+.choice-node {
+  border-radius: 20px;
+  border-style: dashed;
+  min-width: 150px;
+  padding: 10px 15px;
+  background-color: var(--node-choice-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+}
+
+/* Play Mode UI */
+.play-overlay {
+  position: absolute;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.85);
+  z-index: 100;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.play-window {
+  background-color: var(--bg-color);
+  width: 600px;
+  max-width: 90vw;
+  height: 80vh;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.close-btn {
+  background: var(--bg-texture);
+  color: var(--accent-color);
+  padding: 12px;
+  border: none;
+  border-bottom: 1px solid var(--border-color);
+  cursor: pointer;
+  font-family: var(--font-sans);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.close-btn:hover {
+  background: var(--border-color);
+}
+
+.play-content {
+  flex: 1;
+  padding: 40px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.play-text {
+  font-size: 1.5rem;
+}
+
+.play-choices {
+  margin-top: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.play-choice-btn {
+  background: transparent;
+  border: 1px solid var(--accent-color);
+  color: var(--accent-color);
+  padding: 12px 20px;
+  border-radius: 4px;
+  font-family: var(--font-serif);
+  font-size: 1.25rem;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s ease;
+}
+
+.play-choice-btn:hover {
+  background: var(--accent-color);
+  color: var(--on-accent);
+}
+
+.action-btn {
+  padding: 8px 16px;
+  background-color: var(--bg-texture);
+  color: var(--accent-color);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-weight: 500;
+  box-shadow: var(--shadow-sm);
+}
+
+.play-btn {
+  background-color: var(--accent-color);
+  color: var(--on-accent);
+  border-color: var(--accent-hover);
+}
+
+.export-btn {
+  background-color: #3f3934;
+}
+
+.load-btn {
+  background: transparent;
+  border-style: dashed;
+}
+
+.theme-btn {
+  background: linear-gradient(135deg, var(--bg-texture), var(--border-color));
+  border-color: var(--accent-color);
+  color: var(--accent-color);
+  font-size: 0.85rem;
+  transition: all 0.25s ease;
+}
+
+.theme-btn:hover {
+  background: var(--accent-color);
+  color: var(--on-accent);
+}
+
+/* Error Panel overrides */
+.error-panel {
+  background-color: #1a1515; /* slightly red tinted very dark bg */
+}
+
+.error-item {
+  background-color: rgba(255, 107, 107, 0.1);
+  border-left: 4px solid #ff6b6b;
+  padding: 12px 16px;
+  color: #fca5a5;
+  font-family: monospace;
+  font-size: 0.95rem;
+  line-height: 1.4;
+  border-radius: 4px;
+}
+
+/* Document Title Input */
+.project-title-input {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-primary);
+  font-family: var(--font-serif);
+  font-size: 2rem;
+  padding: 4px 12px;
+  margin-left: -12px;
+  border-radius: 4px;
+  outline: none;
+  transition: all 0.2s ease;
+  width: 300px;
+}
+
+.project-title-input:hover,
+.project-title-input:focus {
+  border: 1px solid var(--border-color);
+  background-color: var(--bg-texture);
+}
+
+/* Autocomplete overrides */
+.autocomplete-option:hover {
+  background-color: var(--accent-color);
+  color: var(--on-accent) !important;
+}
+
+/* Knot Title Input */
+.knot-title-input {
+  background: transparent;
+  border: 1px solid transparent;
+  border-bottom: 1px dashed var(--border-color);
+  color: var(--text-primary);
+  font-family: var(--font-serif);
+  font-size: 1.5rem;
+  font-weight: 500;
+  width: 100%;
+  padding: 4px;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.knot-title-input:focus {
+  border-bottom: 1px solid var(--accent-color);
+  background: var(--bg-texture);
+}
+
+/* Ink Tag Syntax Highlighting */
+.ink-highlight span {
+  color: var(--text-primary);  /* normal dialogue lines */
+}
+
+.ink-highlight .ink-tag {
+  color: var(--text-secondary);
+  font-style: italic;
+  opacity: 0.7;
+}
