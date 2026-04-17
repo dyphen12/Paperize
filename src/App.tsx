@@ -6,6 +6,8 @@ import {
   useNodesState,
   useEdgesState,
   addEdge,
+  applyNodeChanges,
+  applyEdgeChanges,
 } from '@xyflow/react';
 import type { Connection, Edge, Node } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
@@ -36,8 +38,32 @@ const initialNodes: Node[] = [
 const initialEdges: Edge[] = [];
 
 function App() {
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+  const [nodes, setNodes] = useNodesState(initialNodes);
+  const [edges, setEdges] = useEdgesState(initialEdges);
+  
+  const onNodesChange = useCallback(
+    (changes: any) => {
+      setNodes((nds) => {
+        const nextNodes = applyNodeChanges(changes, nds);
+        const isStructural = changes.some((c: any) => c.type !== 'select');
+        if (isStructural) setIsDirty(true);
+        return nextNodes;
+      });
+    },
+    [setNodes]
+  );
+
+  const onEdgesChange = useCallback(
+    (changes: any) => {
+      setEdges((eds) => {
+        const nextEdges = applyEdgeChanges(changes, eds);
+        const isStructural = changes.some((c: any) => c.type !== 'select');
+        if (isStructural) setIsDirty(true);
+        return nextEdges;
+      });
+    },
+    [setEdges]
+  );
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   
   const [playMode, setPlayMode] = useState(false);
@@ -58,12 +84,45 @@ function App() {
     return saved;
   });
 
+  // Phase 10: Photoshop-Style Saving
+  const [fileHandle, setFileHandle] = useState<any>(null);
+  const [isDirty, setIsDirty] = useState(false);
+
   const cycleTheme = () => {
     const idx = themes.findIndex((t) => t.name === currentTheme.name);
     const next = themes[(idx + 1) % themes.length];
     applyTheme(next);
     setCurrentTheme(next);
+    setIsDirty(true);
   };
+
+  // Keyboard Shortcuts & Safety Warning
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.key === 's') {
+        e.preventDefault();
+        if (e.shiftKey) {
+          saveProjectAs();
+        } else {
+          saveProject();
+        }
+      }
+    };
+
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isDirty) {
+        e.preventDefault();
+        e.returnValue = ''; // Standard way to show "Changes you made may not be saved"
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [isDirty, nodes, edges, projectTitle, externalFunctions, fileHandle]);
   
   // Autocomplete state
   const [cursorIndex, setCursorIndex] = useState(0);
@@ -138,6 +197,7 @@ function App() {
         return n;
       }),
     );
+    setIsDirty(true);
   };
 
   const updateNodeLabel = (label: string) => {
@@ -150,6 +210,7 @@ function App() {
         return n;
       }),
     );
+    setIsDirty(true);
   };
 
   const updateChoiceModifiers = (isSticky?: boolean, isFallback?: boolean) => {
@@ -169,6 +230,7 @@ function App() {
         return n;
       }),
     );
+    setIsDirty(true);
   };
 
   const addDialogueNode = () => {
@@ -179,6 +241,7 @@ function App() {
       data: { label: 'New Knot', text: '' },
     };
     setNodes((nds) => [...nds, newNode]);
+    setIsDirty(true);
   };
 
   const addChoiceNode = () => {
@@ -189,6 +252,7 @@ function App() {
       data: { label: 'Choice', text: '' },
     };
     setNodes((nds) => [...nds, newNode]);
+    setIsDirty(true);
   };
 
   // -----------------------------------------
@@ -247,59 +311,142 @@ function App() {
   // -----------------------------------------
   // EXPORT / IMPORT
   // -----------------------------------------
-  const downloadFile = async (content: string, filename: string, mimeType: string, extension: string) => {
+  // -----------------------------------------
+  // EXPORT / IMPORT (Phase 10: Photoshop Style)
+  // -----------------------------------------
+  const saveProject = async () => {
+    const projectData = JSON.stringify({ nodes, edges, projectTitle, externalFunctions }, null, 2);
+    
+    // If we already have a handle, try silent overwrite
+    if (fileHandle) {
+      try {
+        const writable = await fileHandle.createWritable();
+        await writable.write(projectData);
+        await writable.close();
+        setIsDirty(false);
+        return;
+      } catch (err) {
+        console.error("Silent save failed, falling back to Save As", err);
+      }
+    }
+    
+    // Otherwise, trigger Save As
+    await saveProjectAs();
+  };
+
+  const saveProjectAs = async () => {
+    const projectData = JSON.stringify({ nodes, edges, projectTitle, externalFunctions }, null, 2);
     try {
       if ('showSaveFilePicker' in window) {
-        const cleanedMimeType = mimeType.split(';')[0];
         const options = {
-          suggestedName: filename,
+          suggestedName: `${projectTitle}.prz`,
           types: [{
-            description: `${extension.toUpperCase()} File`,
-            accept: { [cleanedMimeType]: [extension] },
+            description: 'Paperize Project',
+            accept: { 'application/json': ['.prz'] },
           }],
         };
         const handle = await (window as any).showSaveFilePicker(options);
         const writable = await handle.createWritable();
-        await writable.write(content);
+        await writable.write(projectData);
         await writable.close();
-        return;
+        setFileHandle(handle);
+        setIsDirty(false);
+      } else {
+        // Legacy fallback
+        const blob = new Blob([projectData], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${projectTitle}.prz`;
+        a.click();
+        setIsDirty(false);
       }
     } catch (err: any) {
       if (err.name === 'AbortError') return;
-      console.warn("File System API failed, falling back to legacy download:", err);
+      console.error("Save As failed", err);
+    }
+  };
+
+  const exportToInk = async () => {
+    const inkSource = compileGraphToInk(nodes, edges, externalFunctions);
+    try {
+      if ('showSaveFilePicker' in window) {
+        const options = {
+          suggestedName: `${projectTitle}.ink`,
+          types: [{
+            description: 'Ink Story',
+            accept: { 'text/plain': ['.ink'] },
+          }],
+        };
+        const handle = await (window as any).showSaveFilePicker(options);
+        const writable = await handle.createWritable();
+        await writable.write(inkSource);
+        await writable.close();
+      } else {
+        const blob = new Blob([inkSource], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${projectTitle}.ink`;
+        a.click();
+      }
+    } catch (err: any) {
+      if (err.name === 'AbortError') return;
+      console.error("Export failed", err);
+    }
+  };
+
+  const newProject = () => {
+    if (isDirty) {
+      if (!window.confirm("You have unsaved changes. Are you sure you want to start a new project?")) {
+        return;
+      }
     }
     
-    // Legacy fallback
-    const blob = new Blob([content], { type: mimeType });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.style.display = 'none';
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(() => {
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    }, 100);
+    setNodes(initialNodes);
+    setEdges(initialEdges);
+    setProjectTitle('Untitled Story');
+    setExternalFunctions(['MakeFace(expression)', 'EmitReaction(type)', 'IncreaseHunger(amount)', 'ChangeClothing(item)']);
+    setFileHandle(null);
+    setIsDirty(false);
+    setSelectedNodeId(null);
   };
 
-  const exportToInk = () => {
-    const inkSource = compileGraphToInk(nodes, edges, externalFunctions);
-    downloadFile(inkSource, `${projectTitle}.ink`, 'text/plain;charset=utf-8', '.ink');
+  const loadProject = async () => {
+    try {
+      if ('showOpenFilePicker' in window) {
+        const [handle] = await (window as any).showOpenFilePicker({
+          types: [{
+            description: 'Paperize Project',
+            accept: { 'application/json': ['.prz', '.json'] },
+          }],
+        });
+        const file = await handle.getFile();
+        const content = await file.text();
+        const data = JSON.parse(content);
+        
+        if (data.nodes && data.edges) {
+          setNodes(data.nodes);
+          setEdges(data.edges);
+          setProjectTitle(data.projectTitle || file.name.replace(/\.[^/.]+$/, ""));
+          if (data.externalFunctions) setExternalFunctions(data.externalFunctions);
+          setFileHandle(handle);
+          setIsDirty(false);
+          setSelectedNodeId(null);
+        }
+      } else {
+        // Fallback to legacy
+        fileInputRef.current?.click();
+      }
+    } catch (err: any) {
+      if (err.name === 'AbortError') return;
+      console.error("Load failed", err);
+    }
   };
 
-  const saveProject = () => {
-    const projectData = JSON.stringify({ nodes, edges, projectTitle, externalFunctions }, null, 2);
-    downloadFile(projectData, `${projectTitle}.prz`, 'application/json', '.prz');
-  };
-
-  const handleLoadProject = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLoadProjectLegacy = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    
-    const fileName = file.name.replace(/\.[^/.]+$/, "");
-    
     const reader = new FileReader();
     reader.onload = (event) => {
       try {
@@ -307,19 +454,14 @@ function App() {
         if (data.nodes && data.edges) {
           setNodes(data.nodes);
           setEdges(data.edges);
-          if (data.projectTitle) {
-            setProjectTitle(data.projectTitle);
-          } else {
-            setProjectTitle(fileName);
-          }
-          if (data.externalFunctions) {
-            setExternalFunctions(data.externalFunctions);
-          }
+          setProjectTitle(data.projectTitle || file.name.replace(/\.[^/.]+$/, ""));
+          if (data.externalFunctions) setExternalFunctions(data.externalFunctions);
+          setIsDirty(false);
+          setFileHandle(null); // Can't get handle from input
           setSelectedNodeId(null);
         }
       } catch (err) {
-        console.error("Failed to parse project file", err);
-        alert("Corrupted or invalid .prz file.");
+        console.error("Parse failed", err);
       }
     };
     reader.readAsText(file);
@@ -350,11 +492,15 @@ function App() {
                         const newFuncs = [...externalFunctions];
                         newFuncs[i] = e.target.value;
                         setExternalFunctions(newFuncs);
+                        setIsDirty(true);
                       }}
                       style={{ flex: 1, padding: '8px', background: 'var(--bg-color)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: '4px' }}
                     />
                     <button 
-                      onClick={() => setExternalFunctions(externalFunctions.filter((_, idx) => idx !== i))}
+                      onClick={() => {
+                        setExternalFunctions(externalFunctions.filter((_, idx) => idx !== i));
+                        setIsDirty(true);
+                      }}
                       style={{ background: 'transparent', color: '#ff6b6b', border: 'none', cursor: 'pointer' }}
                     >X</button>
                   </div>
@@ -363,7 +509,10 @@ function App() {
               <button 
                 className="action-btn" 
                 style={{ marginTop: '1rem', width: '100%' }}
-                onClick={() => setExternalFunctions([...externalFunctions, `NewFunction()`])}
+                onClick={() => {
+                  setExternalFunctions([...externalFunctions, `NewFunction()`]);
+                  setIsDirty(true);
+                }}
               >
                 + Add Function
               </button>
@@ -427,8 +576,12 @@ function App() {
           <input 
             type="text" 
             className="project-title-input" 
-            value={projectTitle}
-            onChange={(e) => setProjectTitle(e.target.value)}
+            value={isDirty ? `* ${projectTitle}` : projectTitle}
+            onChange={(e) => {
+              const val = e.target.value;
+              setProjectTitle(isDirty && val.startsWith('* ') ? val.substring(2) : val);
+              setIsDirty(true);
+            }}
             placeholder="Untitled Story"
           />
 
@@ -440,16 +593,20 @@ function App() {
         
         {/* Floating actions: Right side Toolbar */}
         <div style={{ position: 'absolute', top: 20, right: 20, zIndex: 10, display: 'flex', gap: '10px' }}>
+          <button onClick={newProject} className="action-btn">New Project</button>
           <button onClick={() => setShowIntegrations(true)} className="action-btn">Integrations Config</button>
-          <button onClick={() => fileInputRef.current?.click()} className="action-btn load-btn">Load Project</button>
+          <button onClick={loadProject} className="action-btn load-btn">Open Project</button>
           <input 
             type="file" 
             accept=".prz,.json" 
             style={{display: 'none'}} 
             ref={fileInputRef}
-            onChange={handleLoadProject} 
+            onChange={handleLoadProjectLegacy} 
           />
-          <button onClick={saveProject} className="action-btn">Save Project</button>
+          <button onClick={saveProject} className="action-btn">
+            {isDirty ? 'Save (*)' : 'Save'}
+          </button>
+          <button onClick={saveProjectAs} className="action-btn">Save As...</button>
           <button onClick={exportToInk} className="action-btn export-btn">Export .ink</button>
           <button onClick={cycleTheme} className="action-btn theme-btn" title="Switch Theme">{currentTheme.label}</button>
           <button onClick={startPlayMode} className="action-btn play-btn">▶ Play Story</button>
