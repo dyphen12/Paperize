@@ -8,6 +8,7 @@ import {
   addEdge,
   applyNodeChanges,
   applyEdgeChanges,
+  useReactFlow,
 } from '@xyflow/react';
 import type { Connection, Edge, Node } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
@@ -40,6 +41,7 @@ const initialEdges: Edge[] = [];
 function App() {
   const [nodes, setNodes] = useNodesState(initialNodes);
   const [edges, setEdges] = useEdgesState(initialEdges);
+  const { screenToFlowPosition } = useReactFlow();
   
   const onNodesChange = useCallback(
     (changes: any) => {
@@ -234,10 +236,16 @@ function App() {
   };
 
   const addDialogueNode = () => {
+    // Calculate center of current viewport
+    const position = screenToFlowPosition({
+      x: window.innerWidth / 2,
+      y: window.innerHeight / 2,
+    });
+
     const newNode: Node = {
       id: `node-${uuidv4()}`,
       type: 'dialogue',
-      position: { x: (Math.random() * 200) + 300, y: (Math.random() * 200) + 150 },
+      position: { x: position.x - 90, y: position.y - 40 }, // Offset by half node size roughly
       data: { label: 'New Knot', text: '' },
     };
     setNodes((nds) => [...nds, newNode]);
@@ -245,10 +253,15 @@ function App() {
   };
 
   const addChoiceNode = () => {
+    const position = screenToFlowPosition({
+      x: window.innerWidth / 2,
+      y: window.innerHeight / 2,
+    });
+
     const newNode: Node = {
       id: `choice-${uuidv4()}`,
       type: 'choice',
-      position: { x: (Math.random() * 200) + 300, y: (Math.random() * 200) + 250 },
+      position: { x: position.x - 90, y: position.y - 40 },
       data: { label: 'Choice', text: '' },
     };
     setNodes((nds) => [...nds, newNode]);
